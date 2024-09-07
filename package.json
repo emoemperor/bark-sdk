@@ -1,0 +1,24 @@
+{
+    "name": "bark-sdk",
+    "version": "1.0.0",
+    "description": "Bark SDK for Node.js",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "repository": "git@github.com:emoemperor/bark-sdk.git",
+    "author": "emoemperor <github@emocat.icu>",
+    "license": "MIT",
+    "private": false,
+    "devDependencies": {
+        "@types/node": "^22.5.4",
+        "rimraf": "^6.0.1",
+        "typescript": "^5.5.4"
+    },
+    "scripts": {
+        "build": "rimraf dist && tsc",
+        "clean": "rimraf dist",
+        "prepublishOnly": "npm run clean && npm run build"
+    }
+}
