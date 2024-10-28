@@ -39,48 +39,56 @@ export interface barkResponse {
 }
 
 export class BarkSDK {
-  private readonly secretKey: string;
+  private readonly secretKey: string[];
   private readonly baseURL: string;
 
-  constructor(secretKey: string, host: string = "https://api.day.app") {
+  constructor(
+    secretKey: string[] | string,
+    host: string = "https://api.day.app"
+  ) {
+    if (typeof secretKey === "string") {
+      secretKey = [secretKey];
+    }
     this.secretKey = secretKey;
     this.baseURL = host;
   }
 
-  async notify(body: barkParams): Promise<barkResponse> {
-    try {
-      const response = await fetch(`${this.baseURL}/push`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-        },
-        body: JSON.stringify({
-          ...body,
-          device_key: this.secretKey,
-        }),
-      });
+  async notify(body: barkParams): Promise<Promise<barkResponse>[]> {
+    return this.secretKey.map(async (device_key) => {
+      try {
+        const response = await fetch(`${this.baseURL}/push`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+          },
+          body: JSON.stringify({
+            ...body,
+            device_key,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data: barkResponse = await response.json();
+        return data;
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error(`[BarkSDK][ERROR] ${error.message}`);
+          return {
+            code: 500,
+            message: error.message,
+            timestamp: Date.now(),
+          };
+        } else {
+          console.error(`[BarkSDK][ERROR]`, error);
+          return {
+            code: 500,
+            message: "Unknown error",
+            timestamp: Date.now(),
+          };
+        }
       }
-      const data: barkResponse = await response.json();
-      return data;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error(`[BarkSDK][ERROR] ${error.message}`);
-        return {
-          code: 500,
-          message: error.message,
-          timestamp: Date.now(),
-        };
-      } else {
-        console.error(`[BarkSDK][ERROR]`, error);
-        return {
-          code: 500,
-          message: "Unknown error",
-          timestamp: Date.now(),
-        };
-      }
-    }
+    });
   }
 }
